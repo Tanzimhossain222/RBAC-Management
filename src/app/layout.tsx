@@ -3,6 +3,7 @@ import "~/styles/globals.css";
 import { type Metadata } from "next";
 import { SessionProvider } from "next-auth/react";
 import { Geist } from "next/font/google";
+import { ThemeProvider } from "~/components/theme-provider";
 import { auth } from "~/server/auth";
 
 export const metadata: Metadata = {
@@ -23,10 +24,11 @@ export default async function RootLayout({
   console.log("Session in RootLayout", session);
 
   return (
-    <html lang="en" className={`${geist.variable}`}>
-      <body>
-        {" "}
-        <SessionProvider session={session}>{children}</SessionProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body suppressHydrationWarning={true} className={`${geist.variable}`}>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <SessionProvider session={session}>{children}</SessionProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

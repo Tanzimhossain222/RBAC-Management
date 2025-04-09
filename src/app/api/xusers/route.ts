@@ -2,7 +2,11 @@ import { db } from "~/server/db";
 
 export async function GET(request: Request) {
   try {
-    const res = await db.user.findMany();
+    const res = await db.user.findMany({
+      include: {
+        roles: true,
+      },
+    });
 
     return new Response(JSON.stringify(res), {
       status: 200,

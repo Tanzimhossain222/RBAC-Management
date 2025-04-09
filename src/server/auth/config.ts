@@ -2,7 +2,6 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { type NextAuthConfig } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-
 import { db } from "~/server/db";
 
 export const authConfig = {
@@ -27,6 +26,7 @@ export const authConfig = {
         // Find the user in the database
         const user = await db.user.findUnique({
           where: { email: credentials.email },
+          include: { roles: true },
         });
 
         if (!user) {
@@ -47,6 +47,7 @@ export const authConfig = {
         return {
           id: user.id,
           email: user.email,
+          roles: user.roles.map((role: string) => role.name),
         };
       },
     }),
@@ -56,15 +57,22 @@ export const authConfig = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
-        token.email = user.email;
+        token.id = user.id!;
+        token.email = user.email!;
+        token.name = user.name ?? null;
+        token.roles = user.roles;
+        token.permissions = user.permissions;
       }
       return token;
     },
+
     async session({ session, token }) {
-      if (token) {
-        session.id = token.id;
-        session.email = token.email;
+      if (token && session.user) {
+        session.user.id = token.id;
+        session.user.email = token.email;
+        session.user.name = token.name;
+        session.user.roles = token.roles;
+        session.user.permissions = token.permissions;
       }
       return session;
     },

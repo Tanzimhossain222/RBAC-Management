@@ -1,37 +1,32 @@
-import { type DefaultSession } from "next-auth";
+// types/next-auth.d.ts
+
+import { type DefaultSession, type DefaultUser } from "next-auth";
+import "next-auth/jwt";
 
 declare module "next-auth" {
-  // Extend the User type returned by authorize
-  interface User {
+  interface User extends DefaultUser {
     id: string;
-    name?: string | null;
-    email?: string | null;
+    roles: string[];
+    permissions: string[];
   }
 
-  // Extend the Session type to include custom properties in session.user
   interface Session {
     user: {
       id: string;
+      email: string;
       name?: string | null;
-      email?: string | null;
+      roles: string[];
+      permissions: string[];
     } & DefaultSession["user"];
   }
 }
 
 declare module "next-auth/jwt" {
-  // Extend the JWT type to include custom properties in the token
   interface JWT {
     id: string;
+    email: string;
     name?: string | null;
-    email?: string | null;
-  }
-}
-
-// If you still need to fix the adapter type issue, add this:
-declare module "@auth/core/adapters" {
-  interface AdapterUser {
-    id: string;
-    name?: string | null;
-    email?: string | null;
+    roles: string[];
+    permissions: string[];
   }
 }
