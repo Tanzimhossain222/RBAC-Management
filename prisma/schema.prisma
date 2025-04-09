@@ -1,0 +1,60 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model User {
+    id       String  @id @default(cuid())
+    email    String? @unique
+    password String?
+    roles    Role[]  @relation("UserRoles")
+    Post     Post[]
+}
+
+model Role {
+    id          String  @id @default(cuid())
+    name        String  @unique
+    users       User[]  @relation("UserRoles")
+    description String?
+
+    permissions Permission[] @relation("RolePermissions")
+
+    // Hierarchical relationship
+    parentId String?
+    parent   Role?   @relation("RoleHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+    children Role[]  @relation("RoleHierarchy")
+}
+
+model Permission {
+    id       String          @id @default(cuid())
+    action   String
+    resource String
+    description String?
+
+
+    
+    roles    Role[]          @relation("RolePermissions")
+    groupId  String
+    group    PermissionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+    @@unique([action, resource])
+}
+
+model PermissionGroup {
+    id          String       @id @default(cuid())
+    name        String       @unique
+    permissions Permission[]
+}
+
+model Post {
+    id        String   @id @default(cuid())
+    title     String
+    content   String
+    authorId  String
+    author    User     @relation(fields: [authorId], references: [id])
+    createdAt DateTime @default(now())
+}
