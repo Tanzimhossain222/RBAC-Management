@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useEffect, useState } from "react";
-import { type Role } from "./RoleNode";
+import type { Role } from "~/types";
 
 interface RoleFormProps {
   roles: Role[];
@@ -119,7 +119,7 @@ export default function RoleForm({
             {roles
               .filter((role) => role.id !== currentRoleId)
               .map((role) => (
-                <SelectItem key={role.id} value={role.id}>
+                <SelectItem key={role.id} value={role.id!}>
                   {role.name}
                 </SelectItem>
               ))}

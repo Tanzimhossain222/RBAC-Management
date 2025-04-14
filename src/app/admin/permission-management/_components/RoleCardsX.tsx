@@ -4,20 +4,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, UserCog } from "lucide-react";
-
-type Role = {
-  id: string;
-  name: string;
-  parentId: string | null;
-};
-
-type Permission = {
-  id: string;
-  name: string;
-  action: string;
-  resource: string;
-  groupId: string;
-};
+import type { Permission, Role } from "~/types";
 
 type RolePermissions = Record<
   string,
@@ -46,8 +33,9 @@ const RoleCardsX = ({
   return (
     <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {roles.map((role) => {
-        const permKeys = rolePermissions[role.id]?.direct ?? new Set();
-        const inheritedPerms = rolePermissions[role.id]?.inherited ?? new Map();
+        const permKeys = rolePermissions[role.id!]?.direct ?? new Set();
+        const inheritedPerms =
+          rolePermissions[role.id!]?.inherited ?? new Map();
 
         return (
           <Card
@@ -86,9 +74,14 @@ const RoleCardsX = ({
                           permission.id,
                         );
                         const isInherited =
-                          inheritedEntry &&
-                          inheritedEntry.sourceRoleId !== role.id;
-                        const sourceRole = inheritedEntry?.sourceRoleName;
+                          inheritedEntry !== undefined &&
+                          (inheritedEntry as { sourceRoleId: string })
+                            .sourceRoleId !== role.id;
+                        const sourceRole = (
+                          inheritedEntry as
+                            | { sourceRoleName: string }
+                            | undefined
+                        )?.sourceRoleName;
 
                         return (
                           <li
@@ -123,7 +116,7 @@ const RoleCardsX = ({
 
               <Button
                 onClick={() => {
-                  setSelectedRoleId(role.id);
+                  setSelectedRoleId(role.id!);
                   setDialogOpen(true);
                 }}
                 className="mt-6 w-full bg-indigo-600 text-white hover:bg-indigo-700"

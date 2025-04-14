@@ -1,7 +1,13 @@
 // page.tsx
-import type { Role } from "@prisma/client";
+
 import { fetchData } from "~/lib/apiRequest";
 import { getAllXPermissionsForRoleHierarchy } from "~/lib/xPermission";
+import {
+  isPermissionArray,
+  isPermissionGroupArray,
+  isRolesArray,
+  type Role,
+} from "~/types";
 import PermissionManagement from "./_components/PermissionManagement";
 
 const page = async () => {
@@ -11,6 +17,18 @@ const page = async () => {
       fetchData("/permissions/groups"),
       fetchData("/permissions"),
     ]);
+
+    if (!isRolesArray(roles)) {
+      return <p className="text-red-600">Invalid roles data.</p>;
+    }
+
+    if (!isPermissionGroupArray(permissionGroups)) {
+      return <p className="text-red-600">Invalid permission groups data.</p>;
+    }
+
+    if (!isPermissionArray(permissions)) {
+      return <p className="text-red-600">Invalid permissions data.</p>;
+    }
 
     const rolePermissions: Record<
       string,
@@ -25,15 +43,15 @@ const page = async () => {
     > = {};
 
     for (const role of roles) {
-      const perms = await getAllXPermissionsForRoleHierarchy(role.id);
-      rolePermissions[role.id] = {
+      const perms = await getAllXPermissionsForRoleHierarchy(role.id!);
+      rolePermissions[role.id!] = {
         direct: Array.from(perms.direct),
         inherited: Array.from(perms.inherited.entries()).map(
           ([id, sourceRoleId]) => ({
             id,
             sourceRoleId,
             sourceRoleName:
-              roles.find((r: Role) => r.id === sourceRoleId)?.name || "Unknown",
+              roles.find((r: Role) => r.id === sourceRoleId)?.name ?? "Unknown",
           }),
         ),
       };

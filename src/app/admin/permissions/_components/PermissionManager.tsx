@@ -172,7 +172,7 @@ export default function PermissionManager({
       if (!res) return;
 
       setPermissions((pre) => {
-        return [...pre, res];
+        return [...pre, res as Permission];
       });
     }
     setDialogOpen(false);

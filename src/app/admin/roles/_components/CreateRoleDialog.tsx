@@ -10,7 +10,8 @@ import {
 import { PlusCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import RoleForm from "./RoleForm";
-import { type Role } from "./RoleNode";
+import type { Role } from "~/types";
+
 
 interface CreateRoleDialogProps {
   roles: Role[];

@@ -1,3 +1,4 @@
+// RoleManagerClient.tsx
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -5,19 +6,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { UserCog } from "lucide-react";
 import { useEffect, useState } from "react";
 import { deleteMethod, postData, putData } from "~/lib/apiRequest";
+import type { Role } from "~/types";
 import CreateRoleDialog from "./CreateRoleDialog";
-import { type Role } from "./RoleNode";
 import RoleNodeTree from "./RoleTree";
 
-// const fetchRoles = async (): Promise<Role[]> => [
-//   { id: "1", name: "admin", parentId: null, userCount: 10 },
-//   { id: "2", name: "editor", parentId: "1", userCount: 5 },
-//   { id: "3", name: "moderator", parentId: "2", userCount: 3 },
-//   { id: "4", name: "premium-user", parentId: "3", userCount: 2 },
-//   { id: "5", name: "user", parentId: "4", userCount: 50 },
-// ];
-
-export default function RoleManagerClient({ roleData }: { roleData: any[] }) {
+export default function RoleManagerClient({ roleData }: { roleData: Role[] }) {
   const [roles, setRoles] = useState<Role[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -54,23 +47,15 @@ export default function RoleManagerClient({ roleData }: { roleData: any[] }) {
       );
       setRoles(updated);
     } else {
-      const res = await postData({
+      const res = (await postData({
         url: "/roles",
         payload: {
           name,
           parentId,
           description: "",
         },
-      });
+      })) as Role;
 
-    
-
-      const newRole: Role = {
-        id: crypto.randomUUID(),
-        name,
-        parentId,
-        userCount: 0,
-      };
       setRoles([...roles, res]);
     }
     resetForm();
@@ -114,7 +99,7 @@ export default function RoleManagerClient({ roleData }: { roleData: any[] }) {
           editMode={editMode}
           currentRole={currentRole}
           open={dialogOpen}
-          onOpenChange={(open) => {
+          onOpenChange={(open: boolean) => {
             setDialogOpen(open);
             if (!open) resetForm();
           }}

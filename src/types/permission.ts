@@ -1,16 +1,23 @@
-export interface Permission {
-  id: string;
-  name?: string;
+import type { Role } from "./role";
+
+
+
+export type Permission = {
+  id?: string;
   action: string;
   resource: string;
-  groupId: string;
-  description?: string;
-}
-
-export type PermissionGroup = {
-  id: string;
   name: string;
   description?: string;
+  group?: PermissionGroup;
+  groupId?: string;
+  roles?: Role[];
+};
+
+export type PermissionGroup = {
+  id?: string;
+  name: string;
+  description?: string;
+  permissions?: Permission[];
 };
 
 export function isPermissionGroup(obj: unknown): obj is PermissionGroup {

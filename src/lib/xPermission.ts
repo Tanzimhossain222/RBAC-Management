@@ -1,16 +1,5 @@
 import { db } from "~/server/db";
-
-export type Permission = {
-  action: string;
-  resource: string;
-};
-
-export type Role = {
-  id: string;
-  parentId: string | null;
-  permissions: Permission[];
-  children: Role[];
-};
+import type { Role } from "~/types";
 
 function collectDescendants(
   roleId: string,
@@ -20,7 +9,7 @@ function collectDescendants(
   const queue: string[] = [roleId];
   while (queue.length > 0) {
     const current = queue.shift()!;
-    const children = childMap.get(current) || [];
+    const children = childMap.get(current) ?? [];
     result.push(...children);
     queue.push(...children);
   }
@@ -83,7 +72,7 @@ export async function getAllXPermissionsForRoleHierarchy(
     }
 
     // Direct permissions
-    for (const perm of targetRole.permissions || []) {
+    for (const perm of targetRole.permissions ?? []) {
       const permKey = `${perm.action}:${perm.resource}`;
       direct.add(permKey);
       inherited.set(perm.id, roleId); // Mark as direct (same role)
@@ -93,7 +82,7 @@ export async function getAllXPermissionsForRoleHierarchy(
     const ancestorIds = collectAncestors(roleId, roleMap);
     for (const ancestorId of ancestorIds) {
       const ancestor = roleMap.get(ancestorId);
-      for (const perm of ancestor?.permissions || []) {
+      for (const perm of ancestor?.permissions ?? []) {
         const permKey = `${perm.action}:${perm.resource}`;
         direct.add(permKey);
         inherited.set(perm.id, ancestorId);
@@ -113,7 +102,7 @@ export async function getAllXPermissionsForRoleHierarchy(
       for (const siblingId of siblings) {
         if (siblingId === roleId) continue; // Skip self
         const siblingRole = roleMap.get(siblingId);
-        for (const perm of siblingRole?.permissions || []) {
+        for (const perm of siblingRole?.permissions ?? []) {
           const permKey = `${perm.action}:${perm.resource}`;
           direct.add(permKey);
           inherited.set(perm.id, siblingId);

@@ -1,17 +1,5 @@
 import { db } from "~/server/db";
-
-// types.ts
-export type Permission = {
-  action: string;
-  resource: string;
-};
-
-export type Role = {
-  id: string;
-  parentId: string | null;
-  permissions: Permission[];
-  children: Role[];
-};
+import type { Role } from "~/types";
 
 function collectAncestors(
   roleId: string,

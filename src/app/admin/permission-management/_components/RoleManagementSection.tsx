@@ -18,25 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Lock, Shield } from "lucide-react";
 import { type Dispatch, type SetStateAction } from "react";
-
-type Role = {
-  id: string;
-  name: string;
-  parentId: string | null;
-};
-
-type PermissionGroup = {
-  id: string;
-  name: string;
-};
-
-type Permission = {
-  id: string;
-  name: string;
-  action: string;
-  resource: string;
-  groupId: string;
-};
+import type { Permission, PermissionGroup, Role } from "~/types";
 
 type RolePermissions = Record<
   string,
@@ -111,7 +93,7 @@ const RoleManagementSection = ({
                   {roles.map((role) => (
                     <SelectItem
                       key={role.id}
-                      value={role.id}
+                      value={role.id!}
                       className="text-gray-100 hover:bg-indigo-900"
                     >
                       {role.name}
@@ -134,7 +116,7 @@ const RoleManagementSection = ({
                         .map((permission) => {
                           const inheritedEntry = rolePermissions[
                             selectedRoleId
-                          ]?.inherited.get(permission.id);
+                          ]?.inherited.get(permission.id!);
                           const isInherited =
                             inheritedEntry &&
                             inheritedEntry.sourceRoleId !== selectedRoleId;
@@ -154,7 +136,7 @@ const RoleManagementSection = ({
                                 checked={isChecked}
                                 onCheckedChange={() =>
                                   !isInherited &&
-                                  togglePermission(permission.id)
+                                  togglePermission(permission.id!)
                                 }
                                 disabled={isInherited}
                                 className={isInherited ? "opacity-50" : ""}

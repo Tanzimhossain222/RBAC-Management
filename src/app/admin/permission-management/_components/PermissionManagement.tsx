@@ -2,28 +2,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { Permission, PermissionGroup, Role } from "~/types";
 import RoleCardsX from "./RoleCardsX";
 import RoleManagementSection from "./RoleManagementSection";
-
-type Role = {
-  id: string;
-  name: string;
-  parentId: string | null;
-  permissions: Permission[];
-};
-
-type PermissionGroup = {
-  id: string;
-  name: string;
-};
-
-type Permission = {
-  id: string;
-  name: string;
-  action: string;
-  resource: string;
-  groupId: string;
-};
 
 type RolePermissions = Record<
   string,
@@ -88,9 +69,9 @@ export default function PermissionManagement({
     const initialPermissions: RolePermissions = {};
     for (const roleId in rolePermissionsData) {
       initialPermissions[roleId] = {
-        direct: new Set(rolePermissionsData[roleId].direct),
+        direct: new Set(rolePermissionsData[roleId]?.direct ?? []),
         inherited: new Map(
-          rolePermissionsData[roleId].inherited.map((entry) => [
+          rolePermissionsData[roleId]?.inherited?.map((entry) => [
             entry.id,
             {
               id: entry.id,
@@ -117,9 +98,10 @@ export default function PermissionManagement({
   const togglePermission = (permissionId: string) => {
     if (!selectedRoleId) return;
 
-    const updatedDirect = new Set<string>(
-      rolePermissions[selectedRoleId].direct,
-    );
+    const selectedRolePermissions = rolePermissions[selectedRoleId];
+    if (!selectedRolePermissions) return;
+
+    const updatedDirect = new Set<string>(selectedRolePermissions.direct);
     const perm = permissions.find((p) => p.id === permissionId);
     if (!perm) return;
     const permKey = `${perm.action}:${perm.resource}`;
@@ -133,8 +115,8 @@ export default function PermissionManagement({
     setRolePermissions((prev) => ({
       ...prev,
       [selectedRoleId]: {
-        ...prev[selectedRoleId],
         direct: updatedDirect,
+        inherited: prev[selectedRoleId]?.inherited ?? new Map(),
       },
     }));
   };
@@ -147,14 +129,17 @@ export default function PermissionManagement({
       rolePermissions[selectedRoleId],
     );
 
-    const permissionIds = Array.from(rolePermissions[selectedRoleId].direct)
-      .map((permKey) => {
-        const [action, resource] = permKey.split(":");
-        return permissions.find(
-          (p) => p.action === action && p.resource === resource,
-        )?.id;
-      })
-      .filter(Boolean) as string[];
+    const selectedRole = rolePermissions[selectedRoleId];
+    const permissionIds = selectedRole
+      ? (Array.from(selectedRole.direct)
+          .map((permKey) => {
+            const [action, resource] = permKey.split(":");
+            return permissions.find(
+              (p) => p.action === action && p.resource === resource,
+            )?.id;
+          })
+          .filter(Boolean) as string[])
+      : [];
 
     const res = await fetch(`/api/roles/${selectedRoleId}/permissions`, {
       method: "PATCH",

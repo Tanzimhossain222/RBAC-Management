@@ -1,14 +1,9 @@
+// RoleNode.tsx
 "use client";
 
 import { Button } from "@/components/ui/button";
 import { ChevronRight, Edit, Trash2 } from "lucide-react";
-
-export interface Role {
-  id: string;
-  name: string;
-  parentId: string | null;
-  userCount: number;
-}
+import type { Role } from "~/types";
 
 interface RoleNodeProps {
   role: Role;
@@ -47,7 +42,7 @@ export default function RoleNode({
       <div className="group flex items-center justify-between">
         <div className="flex items-center gap-2">
           <button
-            onClick={() => onToggle(role.id)}
+            onClick={() => onToggle(role.id!)}
             className="text-gray-500 dark:text-gray-400"
           >
             <ChevronRight
@@ -58,9 +53,6 @@ export default function RoleNode({
           </button>
           <span className="font-medium text-gray-900 dark:text-gray-200">
             {role.name}
-          </span>
-          <span className="text-sm text-gray-500 dark:text-gray-400">
-            ({role.userCount} users)
           </span>
         </div>
         <div className="flex gap-2 opacity-40 transition-opacity group-hover:opacity-100">
@@ -76,7 +68,7 @@ export default function RoleNode({
             size="icon"
             variant="ghost"
             className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
-            onClick={() => onDelete(role.id)}
+            onClick={() => onDelete(role.id!)}
           >
             <Trash2 className="h-4 w-4" />
           </Button>
