@@ -5,19 +5,22 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { permissions } = await req.json();
+  const body = await req.json();
+  const { permissions } = body;
   const { id } = await params;
 
-  if (!permissions || permissions.length === 0) {
+  // Check if 'permissions' is missing or not an array
+  if (!Array.isArray(permissions)) {
     return NextResponse.json(
-      { error: "Permission IDs required" },
+      { error: "Permission IDs must be an array" },
       { status: 400 },
     );
   }
 
   const role = await db.role.findUnique({ where: { id } });
-  if (!role)
+  if (!role) {
     return NextResponse.json({ error: "Role not found" }, { status: 404 });
+  }
 
   const updated = await db.role.update({
     where: { id },
@@ -29,7 +32,7 @@ export async function PATCH(
   });
 
   return NextResponse.json(
-    { message: "Permissions assigned", updated },
+    { message: "Permissions updated", updated },
     { status: 200 },
   );
 }

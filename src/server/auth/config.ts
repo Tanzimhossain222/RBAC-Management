@@ -2,6 +2,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { type NextAuthConfig } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { getAllPermissionsForRoleHierarchy } from "~/lib/permission";
 import { db } from "~/server/db";
 
 export const authConfig = {
@@ -26,7 +27,13 @@ export const authConfig = {
         // Find the user in the database
         const user = await db.user.findUnique({
           where: { email: credentials.email },
-          include: { roles: true },
+          include: {
+            roles: {
+              include: {
+                permissions: true,
+              },
+            },
+          },
         });
 
         if (!user) {
@@ -44,6 +51,19 @@ export const authConfig = {
 
         console.log("✅ Passed Check 2");
         // Return user object on successful login
+
+        const permissions = new Set<string>();
+        for (const role of user.roles) {
+          const rolePerms = await getAllPermissionsForRoleHierarchy(role.id);
+          console.log("rolePerms----------------", rolePerms);
+
+          for (const p of rolePerms) permissions.add(p);
+        }
+
+        console.log("permissions----------------", permissions);
+
+        console.log(user);
+
         return {
           id: user.id,
           email: user.email,
@@ -61,7 +81,6 @@ export const authConfig = {
         token.email = user.email!;
         token.name = user.name ?? null;
         token.roles = user.roles;
-        token.permissions = user.permissions;
       }
       return token;
     },
@@ -72,7 +91,6 @@ export const authConfig = {
         session.user.email = token.email;
         session.user.name = token.name;
         session.user.roles = token.roles;
-        session.user.permissions = token.permissions;
       }
       return session;
     },

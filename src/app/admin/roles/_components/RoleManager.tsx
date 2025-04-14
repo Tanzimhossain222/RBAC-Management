@@ -63,7 +63,7 @@ export default function RoleManagerClient({ roleData }: { roleData: any[] }) {
         },
       });
 
-      console.log("Response from API:", res);
+    
 
       const newRole: Role = {
         id: crypto.randomUUID(),
@@ -71,7 +71,7 @@ export default function RoleManagerClient({ roleData }: { roleData: any[] }) {
         parentId,
         userCount: 0,
       };
-      setRoles([...roles, newRole]);
+      setRoles([...roles, res]);
     }
     resetForm();
   };

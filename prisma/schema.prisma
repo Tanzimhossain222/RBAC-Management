@@ -30,16 +30,15 @@ model Role {
 }
 
 model Permission {
-    id       String          @id @default(cuid())
-    action   String
-    resource String
+    id          String  @id @default(cuid())
+    action      String
+    resource    String
     description String?
+    name        String?
 
-
-    
-    roles    Role[]          @relation("RolePermissions")
-    groupId  String
-    group    PermissionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+    roles   Role[]          @relation("RolePermissions")
+    groupId String
+    group   PermissionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
     @@unique([action, resource])
 }

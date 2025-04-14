@@ -74,7 +74,7 @@ export async function deleteData(url: string): Promise<unknown> {
   return res.json();
 }
 
-export function patchData({
+export async function patchData({
   url,
   payload,
 }: {
@@ -83,13 +83,21 @@ export function patchData({
 }): Promise<unknown> {
   const baseUrl = env.NEXT_PUBLIC_API_URL;
 
-  return fetch(`${baseUrl}${url}`, {
+  console.log("patchData", { url, payload });
+
+  const res = await fetch(`${baseUrl}${url}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(payload),
   });
+
+  if (!res.ok) {
+    throw new Error("Failed to patch data");
+  }
+
+  return res.json();
 }
 
 export async function putData({

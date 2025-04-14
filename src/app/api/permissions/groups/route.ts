@@ -16,10 +16,10 @@ export async function POST(req: Request) {
 
   const group = await db.permissionGroup.create({ data: { name } });
 
-  return NextResponse.json({ group }, { status: 201 });
+  return NextResponse.json(group, { status: 201 });
 }
 
 export async function GET() {
   const groups = await db.permissionGroup.findMany();
-  return NextResponse.json({ groups }, { status: 200 });
+  return NextResponse.json(groups, { status: 200 });
 }

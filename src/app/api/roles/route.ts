@@ -12,6 +12,13 @@ export async function POST(req: Request) {
       );
     }
 
+    console.log("Creating role with data:", {
+      name,
+      description,
+      parentId,
+    });
+    
+
     // Create a new role
     const role = await db.role.create({
       data: {
@@ -22,7 +29,7 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(
-      { message: "Role created successfully", role },
+        role ,
       { status: 201 },
     );
   } catch (error) {
