@@ -1,3 +1,4 @@
+// ~/lib/permission.ts
 import { db } from "~/server/db";
 import type { Role } from "~/types";
 
@@ -16,21 +17,6 @@ function collectAncestors(
   return ancestors;
 }
 
-function collectDescendants(
-  roleId: string,
-  childMap: Map<string, string[]>,
-): string[] {
-  const result: string[] = [];
-  const queue: string[] = [roleId];
-  while (queue.length > 0) {
-    const current = queue.shift()!;
-    const children = childMap.get(current) ?? [];
-    result.push(...children);
-    queue.push(...children);
-  }
-  return result;
-}
-
 export async function getAllPermissionsForRoleHierarchy(
   roleId: string,
 ): Promise<Set<string>> {
@@ -40,28 +26,22 @@ export async function getAllPermissionsForRoleHierarchy(
     const allRoles = await db.role.findMany({
       include: {
         permissions: true,
-        children: true,
       },
     });
 
-    // Step 2: Build lookup maps
+    // Step 2: Build lookup map
     const roleMap = new Map<string, Role>();
-    const childMap = new Map<string, string[]>();
     for (const role of allRoles) {
       roleMap.set(role.id, {
         id: role.id,
         parentId: role.parentId,
+        // @ts-expect-error : Prisma does not include permissions in the type
         permissions: role.permissions.map((p) => ({
           action: p.action,
           resource: p.resource,
         })),
         children: [],
       });
-      if (role.parentId) {
-        const existing = childMap.get(role.parentId) ?? [];
-        existing.push(role.id);
-        childMap.set(role.parentId, existing);
-      }
     }
 
     const targetRole = roleMap.get(roleId);
@@ -71,8 +51,9 @@ export async function getAllPermissionsForRoleHierarchy(
     }
 
     // Step 3: Role permissions
-    for (const perm of targetRole.permissions || []) {
-      finalPermissions.add(`${perm.action}:${perm.resource}`);
+    for (const perm of targetRole.permissions ?? []) {
+      const permKey = `${perm.action}:${perm.resource}`;
+      finalPermissions.add(permKey);
     }
     console.log("Step 3: Role Permissions", finalPermissions);
 
@@ -81,34 +62,24 @@ export async function getAllPermissionsForRoleHierarchy(
     for (const ancestorId of ancestorIds) {
       const ancestor = roleMap.get(ancestorId);
       for (const perm of ancestor?.permissions ?? []) {
-        finalPermissions.add(`${perm.action}:${perm.resource}`);
+        const permKey = `${perm.action}:${perm.resource}`;
+        finalPermissions.add(permKey);
       }
     }
     console.log("Step 4: Ancestor Permissions", finalPermissions);
 
-    // Step 5: Descendants
-    const descendantIds = collectDescendants(roleId, childMap);
-    for (const descId of descendantIds) {
-      const descRole = roleMap.get(descId);
-      for (const perm of descRole?.permissions ?? []) {
-        finalPermissions.add(`${perm.action}:${perm.resource}`);
+    // Step 5: Validate permissions (exclude invalid like 'f:g', '1:3')
+    const validPermKeys = new Set(
+      allRoles.flatMap((r) =>
+        r.permissions.map((p) => `${p.action}:${p.resource}`),
+      ),
+    );
+    for (const permKey of [...finalPermissions]) {
+      if (!validPermKeys.has(permKey)) {
+        finalPermissions.delete(permKey);
       }
     }
-    console.log("Step 5: Descendant Permissions", finalPermissions);
-
-    // Step 6: Siblings under shared ancestors
-    const sharedAncestorIds = [roleId, ...ancestorIds];
-    for (const ancestorId of sharedAncestorIds) {
-      const siblingDescendants = collectDescendants(ancestorId, childMap);
-      for (const siblingId of siblingDescendants) {
-        if (siblingId === roleId) continue;
-        const siblingRole = roleMap.get(siblingId);
-        for (const perm of siblingRole?.permissions ?? []) {
-          finalPermissions.add(`${perm.action}:${perm.resource}`);
-        }
-      }
-    }
-    console.log("Step 6: Final Permissions", finalPermissions);
+    console.log("Step 5: Validated Permissions", finalPermissions);
   } catch (error) {
     console.error("Error fetching permissions:", error);
     return finalPermissions;

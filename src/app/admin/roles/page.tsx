@@ -19,8 +19,6 @@ const page = async () => {
       }))
     : [];
 
-  console.log("Role data:", roleData);
-
   return (
     <div>
       <RoleManagerClient roleData={roleData} />

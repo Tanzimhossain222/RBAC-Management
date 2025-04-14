@@ -55,19 +55,15 @@ export const authConfig = {
         const permissions = new Set<string>();
         for (const role of user.roles) {
           const rolePerms = await getAllPermissionsForRoleHierarchy(role.id);
-          console.log("rolePerms----------------", rolePerms);
 
           for (const p of rolePerms) permissions.add(p);
         }
-
-        console.log("permissions----------------", permissions);
-
-        console.log(user);
 
         return {
           id: user.id,
           email: user.email,
           roles: user.roles.map((role: string) => role.name),
+          permissions: Array.from(permissions),
         };
       },
     }),
@@ -81,6 +77,7 @@ export const authConfig = {
         token.email = user.email!;
         token.name = user.name ?? null;
         token.roles = user.roles;
+        token.permissions = user.permissions;
       }
       return token;
     },
@@ -91,7 +88,11 @@ export const authConfig = {
         session.user.email = token.email;
         session.user.name = token.name;
         session.user.roles = token.roles;
+        session.user.permissions = token.permissions;
       }
+
+      console.log(JSON.stringify(session, null, 2));
+
       return session;
     },
   },

@@ -38,7 +38,7 @@ function collectSiblingsUnderParent(
   const siblings: string[] = [];
   for (const role of roleMap.values()) {
     if (role.parentId === parentId) {
-      siblings.push(role.id);
+      siblings.push(role.id!);
     }
   }
   return siblings;
@@ -62,6 +62,7 @@ export async function getAllXPermissionsForRoleHierarchy(
 
     const roleMap = new Map<string, Role>();
     for (const role of allRoles) {
+      // @ts-expect-error : Prisma does not include permissions in the type
       roleMap.set(role.id, role);
     }
 
@@ -75,7 +76,7 @@ export async function getAllXPermissionsForRoleHierarchy(
     for (const perm of targetRole.permissions ?? []) {
       const permKey = `${perm.action}:${perm.resource}`;
       direct.add(permKey);
-      inherited.set(perm.id, roleId); // Mark as direct (same role)
+      inherited.set(perm.id!, roleId); // Mark as direct (same role)
     }
 
     // Ancestors (Guest has none, User inherits from Guest, etc.)
@@ -85,7 +86,7 @@ export async function getAllXPermissionsForRoleHierarchy(
       for (const perm of ancestor?.permissions ?? []) {
         const permKey = `${perm.action}:${perm.resource}`;
         direct.add(permKey);
-        inherited.set(perm.id, ancestorId);
+        inherited.set(perm.id!, ancestorId);
       }
     }
 
@@ -105,7 +106,7 @@ export async function getAllXPermissionsForRoleHierarchy(
         for (const perm of siblingRole?.permissions ?? []) {
           const permKey = `${perm.action}:${perm.resource}`;
           direct.add(permKey);
-          inherited.set(perm.id, siblingId);
+          inherited.set(perm.id!, siblingId);
         }
       }
     }
