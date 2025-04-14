@@ -16,10 +16,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Lock, Shield, UserCog } from "lucide-react";
+import { Lock, Shield } from "lucide-react";
 import { type Dispatch, type SetStateAction } from "react";
 
-// Define types
 type Role = {
   id: string;
   name: string;
@@ -39,9 +38,17 @@ type Permission = {
   groupId: string;
 };
 
-type RolePermissions = Record<string, Set<string>>;
+type RolePermissions = Record<
+  string,
+  {
+    direct: Set<string>;
+    inherited: Map<
+      string,
+      { id: string; sourceRoleId: string; sourceRoleName: string }
+    >;
+  }
+>;
 
-// Props interface
 interface RoleManagementSectionProps {
   roles: Role[];
   permissionGroups: PermissionGroup[];
@@ -61,7 +68,6 @@ const RoleManagementSection = ({
   permissionGroups,
   permissions,
   rolePermissions,
-  setRolePermissions,
   setDialogOpen,
   dialogOpen,
   handleRoleSelect,
@@ -71,30 +77,24 @@ const RoleManagementSection = ({
 }: RoleManagementSectionProps) => {
   return (
     <div className="mb-8 flex items-center justify-between">
-      <h1 className="flex items-center gap-2 text-4xl font-bold text-gray-900 dark:text-gray-100">
-        <Shield className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
+      <h1 className="flex items-center gap-2 text-4xl font-bold text-gray-100">
+        <Shield className="h-8 w-8 text-indigo-400" />
         Role & Permission Management
       </h1>
       <Dialog open={dialogOpen} onOpenChange={(open) => setDialogOpen(open)}>
         <DialogTrigger asChild>
-          <Button
-            variant="outline"
-            className="border-none bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
-          >
+          <Button className="border-none bg-indigo-600 text-white hover:bg-indigo-700">
             <Lock className="mr-2 h-4 w-4" />
             Assign Permissions
           </Button>
         </DialogTrigger>
-        <DialogContent className="rounded-lg bg-white shadow-xl sm:max-w-[500px] dark:bg-gray-800">
-          <DialogTitle className="text-gray-900 dark:text-gray-100">
+        <DialogContent className="rounded-lg border-none bg-gray-700 text-gray-100 sm:max-w-[500px]">
+          <DialogTitle className="text-gray-100">
             Assign Permissions to Role
           </DialogTitle>
           <div className="space-y-6 py-4">
             <div className="mb-4">
-              <Label
-                htmlFor="roleSelect"
-                className="text-gray-700 dark:text-gray-300"
-              >
+              <Label htmlFor="roleSelect" className="text-gray-300">
                 Select Role
               </Label>
               <Select
@@ -103,16 +103,16 @@ const RoleManagementSection = ({
               >
                 <SelectTrigger
                   id="roleSelect"
-                  className="border-gray-300 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+                  className="border-gray-600 bg-gray-800 text-gray-100 focus:ring-indigo-500"
                 >
                   <SelectValue placeholder="Select Role" />
                 </SelectTrigger>
-                <SelectContent className="border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-800">
+                <SelectContent className="border-gray-600 bg-gray-800 text-gray-100">
                   {roles.map((role) => (
                     <SelectItem
                       key={role.id}
                       value={role.id}
-                      className="text-gray-900 hover:bg-indigo-100 dark:text-gray-200 dark:hover:bg-indigo-900"
+                      className="text-gray-100 hover:bg-indigo-900"
                     >
                       {role.name}
                     </SelectItem>
@@ -125,39 +125,59 @@ const RoleManagementSection = ({
               <div className="grid max-h-[400px] gap-6 overflow-y-auto pr-4">
                 {permissionGroups.map((group) => (
                   <div key={group.id}>
-                    <h3 className="flex items-center gap-2 font-semibold text-gray-900 dark:text-gray-100">
-                      <UserCog className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                    <h3 className="flex items-center gap-2 font-semibold text-gray-100">
                       {group.name}
                     </h3>
                     <div className="mt-2 grid gap-3">
                       {permissions
                         .filter((permission) => permission.groupId === group.id)
-                        .map((permission) => (
-                          <div
-                            key={permission.id}
-                            className="flex items-center gap-3"
-                          >
-                            <Checkbox
-                              checked={
-                                rolePermissions[selectedRoleId]?.has(
-                                  permission.id,
-                                ) ?? false
-                              }
-                              onCheckedChange={() =>
-                                togglePermission(permission.id)
-                              }
-                            />
-                            <span className="text-gray-700 dark:text-gray-300">
-                              {permission.name}
-                            </span>
-                          </div>
-                        ))}
+                        .map((permission) => {
+                          const inheritedEntry = rolePermissions[
+                            selectedRoleId
+                          ]?.inherited.get(permission.id);
+                          const isInherited =
+                            inheritedEntry &&
+                            inheritedEntry.sourceRoleId !== selectedRoleId;
+                          const sourceRole = inheritedEntry?.sourceRoleName;
+                          const permKey = `${permission.action}:${permission.resource}`;
+                          const isChecked =
+                            rolePermissions[selectedRoleId]?.direct.has(
+                              permKey,
+                            ) ?? isInherited;
+
+                          return (
+                            <div
+                              key={permission.id}
+                              className="flex items-center gap-3"
+                            >
+                              <Checkbox
+                                checked={isChecked}
+                                onCheckedChange={() =>
+                                  !isInherited &&
+                                  togglePermission(permission.id)
+                                }
+                                disabled={isInherited}
+                                className={isInherited ? "opacity-50" : ""}
+                              />
+                              <span
+                                className={`text-gray-300 ${isInherited ? "italic" : ""}`}
+                              >
+                                {permission.name}
+                                {isInherited && sourceRole && (
+                                  <span className="ml-2 text-sm text-gray-400">
+                                    (Inherited from {sourceRole})
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                          );
+                        })}
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-center text-gray-500 dark:text-gray-400">
+              <p className="text-center text-gray-400">
                 Please select a role to assign permissions.
               </p>
             )}
@@ -165,7 +185,7 @@ const RoleManagementSection = ({
             <Button
               onClick={handleSave}
               disabled={!selectedRoleId}
-              className="w-full bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+              className="w-full bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
             >
               Save Permissions
             </Button>
