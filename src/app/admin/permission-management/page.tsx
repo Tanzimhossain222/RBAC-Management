@@ -1,5 +1,6 @@
-// page.tsx
-
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Suspense } from "react";
 import { fetchData } from "~/lib/apiRequest";
 import { getAllXPermissionsForRoleHierarchy } from "~/lib/xPermission";
 import {
@@ -10,8 +11,41 @@ import {
 } from "~/types";
 import PermissionManagement from "./_components/PermissionManagement";
 
-const page = async () => {
+// Loading skeleton for the permission management page
+const PermissionManagementSkeleton = () => (
+  <div className="mx-auto w-full max-w-7xl space-y-8 p-6">
+    <div className="mb-8 flex items-center justify-between">
+      <div className="space-y-2">
+        <Skeleton className="h-10 w-64" />
+        <Skeleton className="h-4 w-96" />
+      </div>
+      <Skeleton className="h-10 w-36" />
+    </div>
+    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <Card key={i} className="flex h-full flex-col overflow-hidden">
+          <Skeleton className="h-12 w-full" />
+          <div className="flex flex-1 flex-col space-y-3 p-5">
+            <Skeleton className="h-5 w-3/4" />
+            <div className="flex-1 space-y-2">
+              {Array.from({ length: 3 }).map((_, j) => (
+                <Skeleton
+                  key={j}
+                  className={`h-4 w-${j === 2 ? "4" : j === 1 ? "5" : ""}6`}
+                />
+              ))}
+            </div>
+            <Skeleton className="h-9 w-full rounded-md" />
+          </div>
+        </Card>
+      ))}
+    </div>
+  </div>
+);
+
+const Page = async () => {
   try {
+    // Fetch all required data in parallel
     const [roles, permissionGroups, permissions] = await Promise.all([
       fetchData("/roles"),
       fetchData("/permissions/groups"),
@@ -19,17 +53,37 @@ const page = async () => {
     ]);
 
     if (!isRolesArray(roles)) {
-      return <p className="text-red-600">Invalid roles data.</p>;
+      return (
+        <div className="flex min-h-[300px] items-center justify-center">
+          <p className="rounded-md bg-red-50 p-4 text-red-600 dark:bg-red-900/30 dark:text-red-400">
+            Invalid roles data. Please check the API response format.
+          </p>
+        </div>
+      );
     }
 
     if (!isPermissionGroupArray(permissionGroups)) {
-      return <p className="text-red-600">Invalid permission groups data.</p>;
+      return (
+        <div className="flex min-h-[300px] items-center justify-center">
+          <p className="rounded-md bg-red-50 p-4 text-red-600 dark:bg-red-900/30 dark:text-red-400">
+            Invalid permission groups data. Please check the API response
+            format.
+          </p>
+        </div>
+      );
     }
 
     if (!isPermissionArray(permissions)) {
-      return <p className="text-red-600">Invalid permissions data.</p>;
+      return (
+        <div className="flex min-h-[300px] items-center justify-center">
+          <p className="rounded-md bg-red-50 p-4 text-red-600 dark:bg-red-900/30 dark:text-red-400">
+            Invalid permissions data. Please check the API response format.
+          </p>
+        </div>
+      );
     }
 
+    // Process role permissions with hierarchy
     const rolePermissions: Record<
       string,
       {
@@ -43,8 +97,10 @@ const page = async () => {
     > = {};
 
     for (const role of roles) {
-      const perms = await getAllXPermissionsForRoleHierarchy(role.id!);
-      rolePermissions[role.id!] = {
+      if (!role.id) continue;
+
+      const perms = await getAllXPermissionsForRoleHierarchy(role.id);
+      rolePermissions[role.id] = {
         direct: Array.from(perms.direct),
         inherited: Array.from(perms.inherited.entries()).map(
           ([id, sourceRoleId]) => ({
@@ -58,7 +114,7 @@ const page = async () => {
     }
 
     return (
-      <div>
+      <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-gray-950 dark:to-gray-900">
         <PermissionManagement
           permissionGroupsData={permissionGroups}
           permissionsData={permissions}
@@ -68,8 +124,22 @@ const page = async () => {
       </div>
     );
   } catch (error) {
-    return <p className="text-red-600">Failed to load data.</p>;
+    console.error("Error loading permission management data:", error);
+    return (
+      <div className="flex min-h-[300px] items-center justify-center">
+        <p className="rounded-md bg-red-50 p-4 text-red-600 dark:bg-red-900/30 dark:text-red-400">
+          Failed to load data. Please check your network connection and API
+          endpoints.
+        </p>
+      </div>
+    );
   }
 };
 
-export default page;
+export default function PermissionManagementPage() {
+  return (
+    <Suspense fallback={<PermissionManagementSkeleton />}>
+      <Page />
+    </Suspense>
+  );
+}
