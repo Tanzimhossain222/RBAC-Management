@@ -2,7 +2,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { ChevronRight, Edit, Trash2 } from "lucide-react";
+import { ChevronRight, Edit, Info, Trash2 } from "lucide-react";
 import type { Role } from "~/types";
 
 interface RoleNodeProps {
@@ -39,11 +39,11 @@ export default function RoleNode({
 
   return (
     <div className={`ml-6 ${lineColor} border-l-2 py-1 pl-4`}>
-      <div className="group flex items-center justify-between">
+      <div className="group flex items-center justify-between rounded-md p-2 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800">
         <div className="flex items-center gap-2">
           <button
             onClick={() => onToggle(role.id!)}
-            className="text-gray-500 dark:text-gray-400"
+            className="flex h-6 w-6 items-center justify-center rounded-full text-gray-500 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700"
           >
             <ChevronRight
               className={`h-4 w-4 transition-transform ${
@@ -54,23 +54,33 @@ export default function RoleNode({
           <span className="font-medium text-gray-900 dark:text-gray-200">
             {role.name}
           </span>
+          {role.description && (
+            <span
+              className="ml-2 hidden cursor-help items-center text-xs text-gray-500 group-hover:inline-flex hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+              title={role.description}
+            >
+              <Info className="h-3.5 w-3.5" />
+            </span>
+          )}
         </div>
-        <div className="flex gap-2 opacity-40 transition-opacity group-hover:opacity-100">
+        <div className="flex gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
           <Button
-            size="icon"
+            size="sm"
             variant="ghost"
-            className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+            className="h-8 w-8 rounded-full p-0 text-blue-600 hover:bg-blue-100 hover:text-blue-800 dark:text-blue-400 dark:hover:bg-blue-900/30 dark:hover:text-blue-300"
             onClick={() => onEdit(role)}
           >
             <Edit className="h-4 w-4" />
+            <span className="sr-only">Edit</span>
           </Button>
           <Button
-            size="icon"
+            size="sm"
             variant="ghost"
-            className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+            className="h-8 w-8 rounded-full p-0 text-red-600 hover:bg-red-100 hover:text-red-800 dark:text-red-400 dark:hover:bg-red-900/30 dark:hover:text-red-300"
             onClick={() => onDelete(role.id!)}
           >
             <Trash2 className="h-4 w-4" />
+            <span className="sr-only">Delete</span>
           </Button>
         </div>
       </div>

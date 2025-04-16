@@ -11,11 +11,13 @@ const page = async () => {
     return <div>Error: Invalid roles data</div>;
   }
 
+  // Pass all role data including descriptions to the client component
   const roleData = roles.length
     ? roles.map((role) => ({
         id: role.id,
         name: role.name,
         parentId: role.parentId,
+        description: role.description,
       }))
     : [];
 

@@ -1,43 +1,55 @@
 // permissions/_components/PermissionItem.tsx
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2 } from "lucide-react";
-import { type Permission } from "./types";
+import { Edit2, Trash2 } from "lucide-react";
+import { type Permission, type PermissionGroup } from "./types";
 
 interface PermissionItemProps {
   permission: Permission;
+  group: PermissionGroup | undefined;
   onEdit: (permission: Permission) => void;
   onDelete: (id: string) => void;
 }
 
-export function PermissionItem({
+/**
+ * Component for displaying a single permission item
+ */
+const PermissionItem = ({
   permission,
+  group,
   onEdit,
   onDelete,
-}: PermissionItemProps) {
+}: PermissionItemProps) => {
   return (
-    <div className="group flex w-full items-center justify-between overflow-hidden rounded-md bg-gray-100 p-2 transition-colors hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600">
-      <div className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate text-xs font-medium text-gray-900 dark:text-gray-200">
-          {permission.name}
-        </span>
-
-        <span className="truncate text-sm text-gray-600 dark:text-gray-400">
-          {`${permission.action} on ${permission.resource}`}
-        </span>
+    <div className="hover:bg-muted/50 flex items-center justify-between rounded-lg border p-4">
+      <div className="space-y-1">
+        <div className="flex items-center gap-2">
+          <h3 className="font-medium">{permission.name}</h3>
+          <Badge variant="outline">{group?.name || "Uncategorized"}</Badge>
+        </div>
+        <p className="text-muted-foreground text-sm">
+          {permission.description || "No description"}
+        </p>
+        <div className="flex gap-2">
+          <Badge variant="secondary">
+            {permission.action}
+          </Badge>
+          <Badge variant="secondary">
+            {permission.resource}
+          </Badge>
+        </div>
       </div>
-      <div className="flex flex-shrink-0 gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+      <div className="flex gap-2">
         <Button
-          size="icon"
           variant="ghost"
-          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+          size="icon"
           onClick={() => onEdit(permission)}
         >
-          <Edit className="h-4 w-4" />
+          <Edit2 className="h-4 w-4" />
         </Button>
         <Button
-          size="icon"
           variant="ghost"
-          className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+          size="icon"
           onClick={() => onDelete(permission.id)}
         >
           <Trash2 className="h-4 w-4" />
@@ -45,4 +57,6 @@ export function PermissionItem({
       </div>
     </div>
   );
-}
+};
+
+export default PermissionItem;

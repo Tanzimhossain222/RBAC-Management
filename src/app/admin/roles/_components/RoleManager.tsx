@@ -1,129 +1,102 @@
-// RoleManagerClient.tsx
+// RoleManager.tsx
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { UserCog } from "lucide-react";
-import { useEffect, useState } from "react";
-import { deleteMethod, postData, putData } from "~/lib/apiRequest";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Info, Shield, UserCog, Users } from "lucide-react";
+import { useState } from "react";
 import type { Role } from "~/types";
 import CreateRoleDialog from "./CreateRoleDialog";
-import RoleNodeTree from "./RoleTree";
+import { useRoles } from "./hooks/useRoles";
+import { RoleDetailsView } from "./RoleDetailsView";
+import { RoleHierarchyView } from "./RoleHierarchyView";
 
-export default function RoleManagerClient({ roleData }: { roleData: Role[] }) {
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [currentRole, setCurrentRole] = useState<Role | null>(null);
-
-  useEffect(() => {
-    if (roleData && roleData.length > 0) {
-      setRoles(roleData);
-    }
-  }, [roleData]);
-
-  const handleCreateOrUpdate = async (
-    name: string,
-    parentId: string | null,
-  ) => {
-    console.log("Creating or updating role:", {
-      name,
-      parentId,
-    });
-
-    if (editMode && currentRole) {
-      const res = await putData({
-        url: `/roles`,
-        payload: {
-          id: currentRole.id,
-          name,
-          parentId,
-          description: "",
-        },
-      });
-
-      const updated = roles.map((role) =>
-        role.id === currentRole.id ? { ...role, name, parentId } : role,
-      );
-      setRoles(updated);
-    } else {
-      const res = (await postData({
-        url: "/roles",
-        payload: {
-          name,
-          parentId,
-          description: "",
-        },
-      })) as Role;
-
-      setRoles([...roles, res]);
-    }
-    resetForm();
-  };
-
-  const handleEdit = (role: Role) => {
-    setEditMode(true);
-    setCurrentRole(role);
-    setDialogOpen(true);
-  };
-
-  const handleDelete = async (id: string) => {
-    const res = await deleteMethod({
-      url: `/roles`,
-      payload: { id },
-    });
-
-    console.log("Response from API:", res);
-
-    const updated = roles.filter(
-      (role) => role.id !== id && role.parentId !== id,
-    );
-    setRoles(updated);
-  };
-
-  const resetForm = () => {
-    setDialogOpen(false);
-    setEditMode(false);
-    setCurrentRole(null);
-  };
+/**
+ * Main component for managing roles
+ */
+export default function RoleManager({ roleData }: { roleData: Role[] }) {
+  const [activeTab, setActiveTab] = useState("hierarchy");
+  
+  // Use the custom hook to manage role state and operations
+  const {
+    roles,
+    currentRole,
+    isLoading,
+    editMode,
+    dialogOpen,
+    setDialogOpen,
+    openCreateDialog,
+    openEditDialog,
+    createOrUpdateRole,
+    deleteRole,
+    resetForm
+  } = useRoles(roleData);
 
   return (
-    <div className="mx-auto min-h-screen max-w-4xl bg-gray-50 p-6 dark:bg-gray-900">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="flex items-center gap-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
-          <UserCog className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
-          Role Management
-        </h1>
-        <CreateRoleDialog
-          roles={roles}
-          editMode={editMode}
-          currentRole={currentRole}
-          open={dialogOpen}
-          onOpenChange={(open: boolean) => {
-            setDialogOpen(open);
-            if (!open) resetForm();
-          }}
-          onSubmit={handleCreateOrUpdate}
-        />
+    <div className="mx-auto min-h-screen w-full max-w-6xl p-6">
+      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="flex items-center gap-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
+            <UserCog className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
+            Role Management
+          </h1>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">
+            Manage your application roles and hierarchies
+          </p>
+        </div>
+        <div className="flex items-center gap-4">
+          <Badge variant="outline" className="px-3 py-1">
+            <Users className="mr-1 h-4 w-4" />
+            {roles.length} Roles
+          </Badge>
+          <CreateRoleDialog
+            roles={roles}
+            editMode={editMode}
+            currentRole={currentRole}
+            open={dialogOpen}
+            onOpenChange={(open: boolean) => {
+              setDialogOpen(open);
+              if (!open) resetForm();
+            }}
+            onSubmit={createOrUpdateRole}
+            isLoading={isLoading}
+          />
+        </div>
       </div>
 
-      <Card className="rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
-        <CardContent>
-          <ScrollArea className="h-[500px] p-6">
-            {roles.length > 0 ? (
-              <RoleNodeTree
-                roles={roles}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-            ) : (
-              <p className="text-center text-gray-500 dark:text-gray-400">
-                No roles available. Create one to get started!
-              </p>
-            )}
-          </ScrollArea>
-        </CardContent>
-      </Card>
+      <Tabs
+        defaultValue="hierarchy"
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="w-full"
+      >
+        <TabsList className="mb-6 grid w-full grid-cols-2">
+          <TabsTrigger value="hierarchy" className="flex items-center gap-2">
+            <Shield className="h-4 w-4" />
+            Role Hierarchy
+          </TabsTrigger>
+          <TabsTrigger value="info" className="flex items-center gap-2">
+            <Info className="h-4 w-4" />
+            Role Information
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="hierarchy">
+          <RoleHierarchyView 
+            roles={roles}
+            onEdit={openEditDialog}
+            onDelete={deleteRole}
+          />
+        </TabsContent>
+
+        <TabsContent value="info">
+          <RoleDetailsView 
+            roles={roles}
+            onEdit={openEditDialog}
+            onDelete={deleteRole}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

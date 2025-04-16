@@ -4,22 +4,28 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { PlusCircle } from "lucide-react";
+import { Loader2, PlusCircle } from "lucide-react";
 import { useEffect, useState } from "react";
-import RoleForm from "./RoleForm";
 import type { Role } from "~/types";
-
+import RoleForm from "./RoleForm";
 
 interface CreateRoleDialogProps {
   roles: Role[];
   editMode: boolean;
   currentRole?: Role | null;
-  onSubmit: (name: string, parentId: string | null) => void;
+  onSubmit: (
+    name: string,
+    parentId: string | null,
+    description?: string,
+  ) => void;
   onOpenChange: (open: boolean) => void;
   open: boolean;
+  isLoading?: boolean;
 }
 
 export default function CreateRoleDialog({
@@ -29,22 +35,36 @@ export default function CreateRoleDialog({
   onSubmit,
   open,
   onOpenChange,
+  isLoading = false,
 }: CreateRoleDialogProps) {
   const [name, setName] = useState("");
   const [parentId, setParentId] = useState<string | null>(null);
+  const [description, setDescription] = useState("");
 
   useEffect(() => {
     if (editMode && currentRole) {
       setName(currentRole.name);
       setParentId(currentRole.parentId ?? null);
+      setDescription(currentRole.description || "");
     } else {
       setName("");
       setParentId(null);
+      setDescription("");
     }
   }, [editMode, currentRole]);
 
-  const handleSubmit = (roleName: string, parentId: string | null) => {
-    onSubmit(roleName, parentId);
+  const handleSubmit = (
+    roleName: string,
+    parentId: string | null,
+    description: string,
+  ) => {
+    console.log("Submitting role with data:", {
+      roleName,
+      parentId,
+      description,
+    });
+
+    onSubmit(roleName, parentId, description);
     onOpenChange(false);
   };
 
@@ -52,24 +72,38 @@ export default function CreateRoleDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button
-          variant="outline"
-          className="border-none bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+          variant="default"
+          className="gap-2 bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+          disabled={isLoading}
         >
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Create Role
+          {isLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <PlusCircle className="h-4 w-4" />
+          )}
+          {editMode ? "Edit Role" : "Create Role"}
         </Button>
       </DialogTrigger>
-      <DialogContent className="rounded-lg bg-white shadow-xl sm:max-w-[425px] dark:bg-gray-800">
-        <DialogTitle className="text-gray-900 dark:text-gray-100">
-          {editMode ? "Edit Role" : "Create New Role"}
-        </DialogTitle>
+      <DialogContent className="max-w-md rounded-lg bg-white shadow-xl dark:bg-gray-800">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+            {editMode ? "Edit Role" : "Create New Role"}
+          </DialogTitle>
+          <DialogDescription className="text-gray-500 dark:text-gray-400">
+            {editMode
+              ? "Update the role details below"
+              : "Fill out the form below to create a new role"}
+          </DialogDescription>
+        </DialogHeader>
         <RoleForm
           roles={roles}
           editMode={editMode}
           initialName={name}
           initialParentId={parentId}
+          initialDescription={description}
           currentRoleId={currentRole?.id ?? null}
           onSubmit={handleSubmit}
+          isLoading={isLoading}
         />
       </DialogContent>
     </Dialog>

@@ -9,7 +9,7 @@ const LoginPage = () => {
         <LoginForm />
         <p className="mt-4 text-center text-sm text-gray-600">
           {"  Don't have an account?"}
-          <Link href="/auth/register" className="text-blue-500 hover:underline">
+          <Link href="/register" className="text-blue-500 hover:underline">
             Sign Up
           </Link>
         </p>
